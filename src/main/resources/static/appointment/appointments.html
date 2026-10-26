@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>All Appointments | Medical Appointment System</title><link rel="stylesheet" href="/appointment/style.css?v=2"><link rel="stylesheet" href="/appointment/suite-appointment.css"></head>
+<body><div class="suite-topbar"><a class="suite-brand" href="/"><span class="brand-icon">♥</span> Medical Appointment System</a><div class="suite-admin"><span class="avatar">●</span> Admin</div></div><div class="suite-shell"><aside class="suite-sidebar"><div class="side-navigation"><a class="side-item " href="/"><span class="nav-symbol">⌂</span>Dashboard</a><a class="side-item " href="/"><span class="nav-symbol">♟</span>Patients</a><a class="side-item " href="/"><span class="nav-symbol">⚕</span>Doctors</a><a class="side-item current" href="/appointment/index.html"><span class="nav-symbol">▦</span>Appointments</a><a class="side-item " href="/"><span class="nav-symbol">▤</span>Doctor Schedules</a><a class="side-item " href="/"><span class="nav-symbol">▣</span>Payments</a><a class="side-item " href="/"><span class="nav-symbol">▤</span>Medical Records</a></div><div class="side-art"><span class="art-hospital">✚</span><strong>Care Today</strong><small>for a Healthier Tomorrow</small></div></aside><div class="appointment-area"><div class="page-banner"><h1>Appointment Management</h1><p>Book, view, reschedule and cancel appointments.</p></div>
+<header><h1>Medical Appointment System</h1><p>Manage patient appointments simply</p></header>
+<nav><a href="/appointment/index.html">Book Appointment</a><a href="/appointment/appointments.html">View Appointments</a></nav>
+<main><section class="panel"><h2>Appointment list</h2><p class="muted">Reschedule, cancel, or permanently delete appointments.</p>
+<div class="toolbar"><input id="search" placeholder="Search patient, doctor, ID..." aria-label="Search appointments"><a class="btn" href="/appointment/index.html">+ New Booking</a></div>
+<div class="table-wrap"><table><thead><tr><th>ID</th><th>Patient</th><th>Doctor</th><th>Date</th><th>Time</th><th>Type</th><th>Status</th><th>Actions</th></tr></thead><tbody id="rows"></tbody></table></div>
+<div id="message" class="notice" role="status"></div>
+</section></main><script src="/appointment/app.js?v=2"></script>
+<script>
+let all=[];
+async function load(){
+    try{all=await request();draw();}catch(e){message(e.message,true);}
+}
+function draw(){
+    const tbody=document.getElementById("rows");tbody.replaceChildren();
+    const q=document.getElementById("search").value.trim().toLowerCase();
+    const filtered=all.filter(a=>[a.id,a.patientName,a.doctorName,a.date,a.status].some(v=>String(v).toLowerCase().includes(q)));
+    if(!filtered.length){const tr=document.createElement("tr");const td=cell(tr,"No appointments found.");td.colSpan=8;td.className="empty";tbody.appendChild(tr);return;}
+    for(const a of filtered){
+        const tr=document.createElement("tr");
+        for(const k of ["id","patientName","doctorName","date","time","appointmentType"]){cell(tr,a[k]);}
+        const st=cell(tr,a.status);st.innerHTML="";
+        const tag=document.createElement("span");tag.className="status"+(a.status==="Cancelled"?" cancelled":"");tag.textContent=a.status;st.appendChild(tag);
+        const td=document.createElement("td");const area=document.createElement("div");area.className="small-actions";
+        const edit=document.createElement("a");edit.className="btn secondary";edit.textContent="Edit";edit.href="edit.html?id="+encodeURIComponent(a.id);area.appendChild(edit);
+        const cancel=document.createElement("button");cancel.className="secondary";cancel.textContent="Cancel";cancel.disabled=a.status==="Cancelled";
+        cancel.addEventListener("click",()=>change(a.id,"PUT","/cancel","Cancel this appointment?"));area.appendChild(cancel);
+        const del=document.createElement("button");del.className="danger";del.textContent="Delete";
+        del.addEventListener("click",()=>change(a.id,"DELETE","","Permanently delete this appointment?"));area.appendChild(del);
+        td.appendChild(area);tr.appendChild(td);tbody.appendChild(tr);
+    }
+}
+async function change(id,method,suffix,prompt){
+    if(!confirm(prompt))return;
+    try{await request("/"+id+suffix,method);message(method==="DELETE"?"Appointment deleted.":"Appointment cancelled.");await load();}
+    catch(e){message(e.message,true);}
+}
+document.getElementById("search").addEventListener("input",draw);
+load();
+</script></div></div></body></html>

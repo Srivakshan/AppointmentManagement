@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Book Appointment | Medical Appointment System</title><link rel="stylesheet" href="/appointment/style.css?v=2"><link rel="stylesheet" href="/appointment/suite-appointment.css"></head>
+<body><div class="suite-topbar"><a class="suite-brand" href="/"><span class="brand-icon">♥</span> Medical Appointment System</a><div class="suite-admin"><span class="avatar">●</span> Admin</div></div><div class="suite-shell"><aside class="suite-sidebar"><div class="side-navigation"><a class="side-item " href="/"><span class="nav-symbol">⌂</span>Dashboard</a><a class="side-item " href="/"><span class="nav-symbol">♟</span>Patients</a><a class="side-item " href="/"><span class="nav-symbol">⚕</span>Doctors</a><a class="side-item current" href="/appointment/index.html"><span class="nav-symbol">▦</span>Appointments</a><a class="side-item " href="/"><span class="nav-symbol">▤</span>Doctor Schedules</a><a class="side-item " href="/"><span class="nav-symbol">▣</span>Payments</a><a class="side-item " href="/"><span class="nav-symbol">▤</span>Medical Records</a></div><div class="side-art"><span class="art-hospital">✚</span><strong>Care Today</strong><small>for a Healthier Tomorrow</small></div></aside><div class="appointment-area"><div class="page-banner"><h1>Appointment Management</h1><p>Book, view, reschedule and cancel appointments.</p></div>
+<header><h1>Medical Appointment System</h1><p>Manage patient appointments simply</p></header>
+<nav><a href="/appointment/index.html">Book Appointment</a><a href="/appointment/appointments.html">View Appointments</a></nav>
+<main><section class="panel"><h2>Book a new appointment</h2><p class="muted">Fill in the patient and doctor details below.</p>
+<form id="form" class="form-grid">
+<div class="field"><label for="patientName">Patient Name</label><input id="patientName" required maxlength="100" placeholder="e.g. Kumar"></div>
+<div class="field"><label for="doctorName">Doctor Name</label><input id="doctorName" required maxlength="100" placeholder="e.g. Dr. Shan"></div>
+<div class="field"><label for="date">Date</label><input type="date" id="date" required></div>
+<div class="field"><label for="time">Time</label><input type="time" id="time" required></div>
+<div class="field full"><label for="type">Appointment Type</label><select id="type"><option>Online</option><option>Physical</option></select></div>
+<div class="field full"><div class="actions"><button type="button" class="secondary" id="check">Check Doctor Availability</button><button type="submit">Book Appointment</button></div></div>
+</form><div id="message" class="notice" role="status"></div>
+</section></main>
+<script src="/appointment/app.js?v=2"></script>
+<script>
+document.getElementById("date").min = localToday();
+function values(){return {
+    patientName:document.getElementById("patientName").value.trim(),
+    doctorName:document.getElementById("doctorName").value.trim(),
+    date:document.getElementById("date").value,
+    time:document.getElementById("time").value,
+    type:document.getElementById("type").value
+};}
+document.getElementById("check").addEventListener("click", async () => {
+    const v=values();
+    if(!v.doctorName || !v.date || !v.time){message("Enter doctor, date and time first.",true);return;}
+    try{
+        const qs=new URLSearchParams({doctor:v.doctorName,date:v.date,time:v.time});
+        const r=await request("/availability?"+qs);
+        message(r.available ? "Doctor is available at this time." : "Doctor already booked at this time.",!r.available);
+    }catch(e){message(e.message,true);}
+});
+document.getElementById("form").addEventListener("submit",async e=>{
+    e.preventDefault();
+    const chosenDate = document.getElementById("date").value;
+    const chosenTime = document.getElementById("time").value;
+    if (!chosenDate || !chosenTime || new Date(chosenDate + "T" + chosenTime + ":00") <= new Date()) {
+      message("Choose a future appointment date and time.", true);
+      return;
+    }
+    try{
+        const r=await request("","POST",values());
+        message("Appointment booked successfully! ID: "+r.id);
+        e.target.reset();
+    }catch(err){message(err.message,true);}
+});
+</script></div></div></body></html>
